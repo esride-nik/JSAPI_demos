@@ -4,6 +4,9 @@ import esriRequest from "esri/request";
 
 function App() {
 
+    const speedFactor: number = 0.02;
+    const offset: number = 3000;
+
     let mode = "light";
     let webscene: WebScene;
     let view: SceneView
@@ -126,7 +129,7 @@ function App() {
         playAnimation(slides.items);
     }
 
-    function playAnimation(slides: any[], speed: number = 1, offset: number = 1) {
+    function playAnimation(slides: any[]) {
         console.log("Playing flight", slides, view);
         
         view.on("click", (e: any) => {
@@ -134,21 +137,28 @@ function App() {
             
             aniMax = slides.length;
             aniSlideCounter = 0;
-            aniNextLocation(slides, speed, offset);
+            aniNextLocation(slides);
         });
     }
 
-    function aniNextLocation(slides: any[], speed: number = 1, offset: number = 1) {
+    function aniNextLocation(slides: any[]) {
         console.log("Approaching location #"+(aniSlideCounter+1), slides[aniSlideCounter], slides[aniSlideCounter].viewpoint);
-        if (aniSlideCounter<=slides.length) {
-            view.goTo(slides[aniSlideCounter].viewpoint, {
-                animate: true,
-                duration: 10000,
-                maxDuration: 20000,
-                easing: "in-out-coast-quadrati"
-            }).then(() => aniNextLocation(slides));
-            aniSlideCounter++;
-        }
+        new Promise((resolve: any) => {            
+            setTimeout(resolve, offset);
+        }).then(() => {
+            console.log("Offset over", offset);
+            if (aniSlideCounter<=slides.length) {
+                view.goTo(slides[aniSlideCounter].viewpoint, {
+                    animate: true,
+                    speedFactor: speedFactor,
+                    maxDuration: 1000000,
+                    easing: "in-out-coast-quadrati"
+                }).then(() => {
+                    aniNextLocation(slides)
+                });
+                aniSlideCounter++;
+            }
+        });
     }
 
     function setScene(id) {

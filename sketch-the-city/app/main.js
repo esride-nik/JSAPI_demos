@@ -8,6 +8,8 @@ define(["require", "exports", "esri/WebScene", "esri/views/SceneView", "esri/req
     SceneView_1 = __importDefault(SceneView_1);
     request_1 = __importDefault(request_1);
     function App() {
+        var speedFactor = 0.02;
+        var offset = 3000;
         var mode = "light";
         var webscene;
         var view;
@@ -112,30 +114,33 @@ define(["require", "exports", "esri/WebScene", "esri/views/SceneView", "esri/req
             // TODO: choose from several configured paths and animation styles here (DepthOfField, revolve)
             playAnimation(slides.items);
         }
-        function playAnimation(slides, speed, offset) {
-            if (speed === void 0) { speed = 1; }
-            if (offset === void 0) { offset = 1; }
+        function playAnimation(slides) {
             console.log("Playing flight", slides, view);
             view.on("click", function (e) {
                 console.log("click", e);
                 aniMax = slides.length;
                 aniSlideCounter = 0;
-                aniNextLocation(slides, speed, offset);
+                aniNextLocation(slides);
             });
         }
-        function aniNextLocation(slides, speed, offset) {
-            if (speed === void 0) { speed = 1; }
-            if (offset === void 0) { offset = 1; }
+        function aniNextLocation(slides) {
             console.log("Approaching location #" + (aniSlideCounter + 1), slides[aniSlideCounter], slides[aniSlideCounter].viewpoint);
-            if (aniSlideCounter <= slides.length) {
-                view.goTo(slides[aniSlideCounter].viewpoint, {
-                    animate: true,
-                    duration: 10000,
-                    maxDuration: 20000,
-                    easing: "in-out-coast-quadrati"
-                }).then(function () { return aniNextLocation(slides); });
-                aniSlideCounter++;
-            }
+            new Promise(function (resolve) {
+                setTimeout(resolve, offset);
+            }).then(function () {
+                console.log("Offset over", offset);
+                if (aniSlideCounter <= slides.length) {
+                    view.goTo(slides[aniSlideCounter].viewpoint, {
+                        animate: true,
+                        speedFactor: speedFactor,
+                        maxDuration: 1000000,
+                        easing: "in-out-coast-quadrati"
+                    }).then(function () {
+                        aniNextLocation(slides);
+                    });
+                    aniSlideCounter++;
+                }
+            });
         }
         function setScene(id) {
             console.log("Setting scene for ", id);
