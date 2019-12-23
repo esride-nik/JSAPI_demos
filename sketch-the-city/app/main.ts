@@ -11,10 +11,10 @@ function App() {
   const loading = document.getElementById("loading");
   const error = document.getElementById("error");
 
-  let id;
-  let city;
-  let pathNo;
-  let mode;
+  let id: string;
+  let city: string;
+  let pathNo: string;
+  let mode: string;
 
   // function to retrieve query parameters (in this case only id)
   function getUrlParams() {
@@ -28,8 +28,6 @@ function App() {
         })
     });
 
-    console.log("URL PARAMS",result);
-
     id = result.id;
     city = result.city;
     pathNo = result.pathNo;
@@ -38,48 +36,50 @@ function App() {
 
  getUrlParams();
 
-  // function to set an id once a scene was selected
-  function setId(id) {
-    window.history.pushState("", "", window.location.pathname + "?id=" + id);
-  }
-
   // if user loaded scene by setting an id in the url, load that scene
   if (id) {
     setScene(id);
   // else display the intro text
-  } else {
-    intro.classList.remove("hide");
+  } else if (city) {
+    // load the cities from the json file
+    esriRequest('./cities.json', {
+        responseType: "json"
+    })
+    .then((response: any) => {
+        let cityCfg = response.data.cities.filter((cityCfg: any) => {
+            if (cityCfg.short === city) {
+                return true;
+            };
+        });
+        if (cityCfg) {
+            console.log("City shortcode found.", cityCfg[0]);
+            id = cityCfg[0].id;
+            setScene(id);
+        }
+        else {
+            console.error("City shortcode not found.");
+            
+        }
+    });
+  }
+  else {
+      console.error("Please provide city or id URL parameter.");
   }
 
-  // load the cities from the json file
-  esriRequest('./cities.json', {
-      responseType: "json"
-    })
-    // when loaded successfully use the data to create the menu of cities at the top
-    .then(function(response) {
-
-      const cities = response.data.cities;
-      const cityContainer = document.getElementById("cities");
-
-    //   // generate the menu using plain old vanilla JS DOM API
-    //   for (let i = 0; i < cities.length; i++) {
-    //     const city = cities[i];
-    //     const button = document.createElement("button");
-    //     button.innerHTML = city.title;
-    //     button.addEventListener("click", function() {
-    //       setScene(city.id);
-    //       setId(city.id);
-    //       if (city.attribution) {
-    //         document.getElementById("attribution").innerHTML = city.attribution + '. Made with <a href="" target="_blank">ArcGIS API for JavaScript</a>';
-    //       }
-    //     }.bind(city));
-    //     cityContainer.appendChild(button);
-    //   }
-    })
-    // if something went wrong with the loading show an error in the console
-    .catch(function(err) {
-      console.log(err);
+  
+//  visualization mode
+if (mode === "dark") {
+    document.getElementById("customCSS").href = "./styles/dark.css";
+} else {
+    document.getElementById("customCSS").href = "./styles/light.css";
+}
+if (webscene) {
+    webscene.layers.forEach(function(layer) {
+    setSketchRenderer(layer);
     });
+}
+
+
 
   function setSketchRenderer(layer) {
 
@@ -147,9 +147,9 @@ function App() {
   }
 
   function setScene(id) {
+    console.log("Setting scene for ", id);
 
     document.getElementById("slides").innerHTML = "";
-    // document.getElementById("attribution").innerHTML = 'Made with <a href="" target="_blank">ArcGIS API for JavaScript</a>.';
 
     if (!intro.classList.contains("hide")) {
       intro.classList.add("hide");
@@ -229,25 +229,6 @@ function App() {
 
     window.view = view;
   }
-
-  // when changing the visualization mode swap the css files and change renderer
-//   document.getElementById("mode").addEventListener("click", function(evt) {
-
-//     if (mode === "light") {
-//       mode = "dark";
-//       evt.target.innerHTML = "Pencil";
-//       document.getElementById("customCSS").href = "./styles/dark.css";
-//     } else {
-//       mode = "light";
-//       evt.target.innerHTML = "Chalk";
-//       document.getElementById("customCSS").href = "./styles/light.css";
-//     }
-//     if (webscene) {
-//       webscene.layers.forEach(function(layer) {
-//         setSketchRenderer(layer);
-//       });
-//     }
-//   });
 };
 
 App();

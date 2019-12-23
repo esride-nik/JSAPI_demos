@@ -27,52 +27,54 @@ define(["require", "exports", "esri/WebScene", "esri/views/SceneView", "esri/req
                     result[item[0]] = decodeURIComponent(item[1]);
                 });
             });
-            console.log("URL PARAMS", result);
             id = result.id;
             city = result.city;
             pathNo = result.pathNo;
             mode = result.mode;
         }
         getUrlParams();
-        // function to set an id once a scene was selected
-        function setId(id) {
-            window.history.pushState("", "", window.location.pathname + "?id=" + id);
-        }
         // if user loaded scene by setting an id in the url, load that scene
         if (id) {
             setScene(id);
             // else display the intro text
         }
-        else {
-            intro.classList.remove("hide");
+        else if (city) {
+            // load the cities from the json file
+            request_1.default('./cities.json', {
+                responseType: "json"
+            })
+                .then(function (response) {
+                var cityCfg = response.data.cities.filter(function (cityCfg) {
+                    if (cityCfg.short === city) {
+                        return true;
+                    }
+                    ;
+                });
+                if (cityCfg) {
+                    console.log("City shortcode found.", cityCfg[0]);
+                    id = cityCfg[0].id;
+                    setScene(id);
+                }
+                else {
+                    console.error("City shortcode not found.");
+                }
+            });
         }
-        // load the cities from the json file
-        request_1.default('./cities.json', {
-            responseType: "json"
-        })
-            // when loaded successfully use the data to create the menu of cities at the top
-            .then(function (response) {
-            var cities = response.data.cities;
-            var cityContainer = document.getElementById("cities");
-            //   // generate the menu using plain old vanilla JS DOM API
-            //   for (let i = 0; i < cities.length; i++) {
-            //     const city = cities[i];
-            //     const button = document.createElement("button");
-            //     button.innerHTML = city.title;
-            //     button.addEventListener("click", function() {
-            //       setScene(city.id);
-            //       setId(city.id);
-            //       if (city.attribution) {
-            //         document.getElementById("attribution").innerHTML = city.attribution + '. Made with <a href="" target="_blank">ArcGIS API for JavaScript</a>';
-            //       }
-            //     }.bind(city));
-            //     cityContainer.appendChild(button);
-            //   }
-        })
-            // if something went wrong with the loading show an error in the console
-            .catch(function (err) {
-            console.log(err);
-        });
+        else {
+            console.error("Please provide city or id URL parameter.");
+        }
+        //  visualization mode
+        if (mode === "dark") {
+            document.getElementById("customCSS").href = "./styles/dark.css";
+        }
+        else {
+            document.getElementById("customCSS").href = "./styles/light.css";
+        }
+        if (webscene) {
+            webscene.layers.forEach(function (layer) {
+                setSketchRenderer(layer);
+            });
+        }
         function setSketchRenderer(layer) {
             var outlineColor = mode === "dark" ? [255, 255, 255, 0.8] : [0, 0, 0, 0.8];
             var fillColor = mode === "dark" ? [10, 10, 10, 0.1] : [255, 255, 255, 0.1];
@@ -126,8 +128,8 @@ define(["require", "exports", "esri/WebScene", "esri/views/SceneView", "esri/req
             }
         }
         function setScene(id) {
+            console.log("Setting scene for ", id);
             document.getElementById("slides").innerHTML = "";
-            // document.getElementById("attribution").innerHTML = 'Made with <a href="" target="_blank">ArcGIS API for JavaScript</a>.';
             if (!intro.classList.contains("hide")) {
                 intro.classList.add("hide");
             }
@@ -196,23 +198,6 @@ define(["require", "exports", "esri/WebScene", "esri/views/SceneView", "esri/req
             });
             window.view = view;
         }
-        // when changing the visualization mode swap the css files and change renderer
-        //   document.getElementById("mode").addEventListener("click", function(evt) {
-        //     if (mode === "light") {
-        //       mode = "dark";
-        //       evt.target.innerHTML = "Pencil";
-        //       document.getElementById("customCSS").href = "./styles/dark.css";
-        //     } else {
-        //       mode = "light";
-        //       evt.target.innerHTML = "Chalk";
-        //       document.getElementById("customCSS").href = "./styles/light.css";
-        //     }
-        //     if (webscene) {
-        //       webscene.layers.forEach(function(layer) {
-        //         setSketchRenderer(layer);
-        //       });
-        //     }
-        //   });
     }
     ;
     App();
