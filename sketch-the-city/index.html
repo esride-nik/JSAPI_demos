@@ -9,6 +9,11 @@
   <link rel="stylesheet" href="https://js.arcgis.com/4.13/esri/css/main.css">
   <link rel="stylesheet" href="styles/main.css">
   <link id="customCSS" rel="stylesheet" href="styles/light.css">
+  <style>
+    .esri-attribution {
+      display:none;
+    }
+  </style>
   <script>
       var dojoConfig = {
         packages: [{
@@ -36,7 +41,7 @@
   <div id="slides"></div>
   <div id="loading" class="hide">Loading <img src="loading.gif" alt="loading icon"></div>
   <div id="error" class="hide">I'm sorry, I can't display this :(</div>
-  <div id="attribution"></div>
+  <!-- <div id="attribution"></div> -->
   <script>
   require([
       "app/main",

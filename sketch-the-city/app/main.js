@@ -1,28 +1,39 @@
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-define(["require", "exports", "esri/WebScene", "esri/views/SceneView"], function (require, exports, WebScene_1, SceneView_1) {
+define(["require", "exports", "esri/WebScene", "esri/views/SceneView", "esri/request"], function (require, exports, WebScene_1, SceneView_1, request_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     WebScene_1 = __importDefault(WebScene_1);
     SceneView_1 = __importDefault(SceneView_1);
+    request_1 = __importDefault(request_1);
     function App() {
         var mode = "light";
         var webscene;
         var intro = document.getElementById("intro");
         var loading = document.getElementById("loading");
         var error = document.getElementById("error");
+        var id;
+        var city;
+        var pathNo;
+        var mode;
         // function to retrieve query parameters (in this case only id)
-        function getIdParam() {
+        function getUrlParams() {
             var queryParams = document.location.search.substr(1);
             var result = {};
-            queryParams.split("&").forEach(function (part) {
-                var item = part.split("=");
-                result[item[0]] = decodeURIComponent(item[1]);
+            queryParams.split("?").map(function (params) {
+                params.split("&").map(function (param) {
+                    var item = param.split("=");
+                    result[item[0]] = decodeURIComponent(item[1]);
+                });
             });
-            return result.id;
+            console.log("URL PARAMS", result);
+            id = result.id;
+            city = result.city;
+            pathNo = result.pathNo;
+            mode = result.mode;
         }
-        var id = getIdParam();
+        getUrlParams();
         // function to set an id once a scene was selected
         function setId(id) {
             window.history.pushState("", "", window.location.pathname + "?id=" + id);
@@ -36,30 +47,27 @@ define(["require", "exports", "esri/WebScene", "esri/views/SceneView"], function
             intro.classList.remove("hide");
         }
         // load the cities from the json file
-        esriRequest('./cities.json', {
+        request_1.default('./cities.json', {
             responseType: "json"
         })
             // when loaded successfully use the data to create the menu of cities at the top
             .then(function (response) {
             var cities = response.data.cities;
             var cityContainer = document.getElementById("cities");
-            var _loop_1 = function (i) {
-                var city = cities[i];
-                var button = document.createElement("button");
-                button.innerHTML = city.title;
-                button.addEventListener("click", function () {
-                    setScene(city.id);
-                    setId(city.id);
-                    if (city.attribution) {
-                        document.getElementById("attribution").innerHTML = city.attribution + '. Made with <a href="" target="_blank">ArcGIS API for JavaScript</a>';
-                    }
-                }.bind(city));
-                cityContainer.appendChild(button);
-            };
-            // generate the menu using plain old vanilla JS DOM API
-            for (var i = 0; i < cities.length; i++) {
-                _loop_1(i);
-            }
+            //   // generate the menu using plain old vanilla JS DOM API
+            //   for (let i = 0; i < cities.length; i++) {
+            //     const city = cities[i];
+            //     const button = document.createElement("button");
+            //     button.innerHTML = city.title;
+            //     button.addEventListener("click", function() {
+            //       setScene(city.id);
+            //       setId(city.id);
+            //       if (city.attribution) {
+            //         document.getElementById("attribution").innerHTML = city.attribution + '. Made with <a href="" target="_blank">ArcGIS API for JavaScript</a>';
+            //       }
+            //     }.bind(city));
+            //     cityContainer.appendChild(button);
+            //   }
         })
             // if something went wrong with the loading show an error in the console
             .catch(function (err) {
@@ -119,7 +127,7 @@ define(["require", "exports", "esri/WebScene", "esri/views/SceneView"], function
         }
         function setScene(id) {
             document.getElementById("slides").innerHTML = "";
-            document.getElementById("attribution").innerHTML = 'Made with <a href="" target="_blank">ArcGIS API for JavaScript</a>.';
+            // document.getElementById("attribution").innerHTML = 'Made with <a href="" target="_blank">ArcGIS API for JavaScript</a>.';
             if (!intro.classList.contains("hide")) {
                 intro.classList.add("hide");
             }
@@ -189,23 +197,22 @@ define(["require", "exports", "esri/WebScene", "esri/views/SceneView"], function
             window.view = view;
         }
         // when changing the visualization mode swap the css files and change renderer
-        document.getElementById("mode").addEventListener("click", function (evt) {
-            if (mode === "light") {
-                mode = "dark";
-                evt.target.innerHTML = "Pencil";
-                document.getElementById("customCSS").href = "./styles/dark.css";
-            }
-            else {
-                mode = "light";
-                evt.target.innerHTML = "Chalk";
-                document.getElementById("customCSS").href = "./styles/light.css";
-            }
-            if (webscene) {
-                webscene.layers.forEach(function (layer) {
-                    setSketchRenderer(layer);
-                });
-            }
-        });
+        //   document.getElementById("mode").addEventListener("click", function(evt) {
+        //     if (mode === "light") {
+        //       mode = "dark";
+        //       evt.target.innerHTML = "Pencil";
+        //       document.getElementById("customCSS").href = "./styles/dark.css";
+        //     } else {
+        //       mode = "light";
+        //       evt.target.innerHTML = "Chalk";
+        //       document.getElementById("customCSS").href = "./styles/light.css";
+        //     }
+        //     if (webscene) {
+        //       webscene.layers.forEach(function(layer) {
+        //         setSketchRenderer(layer);
+        //       });
+        //     }
+        //   });
     }
     ;
     App();
