@@ -10,6 +10,7 @@ define(["require", "exports", "esri/WebScene", "esri/views/SceneView", "esri/req
     function App() {
         var mode = "light";
         var webscene;
+        var view;
         var intro = document.getElementById("intro");
         var loading = document.getElementById("loading");
         var error = document.getElementById("error");
@@ -17,6 +18,8 @@ define(["require", "exports", "esri/WebScene", "esri/views/SceneView", "esri/req
         var city;
         var pathNo;
         var mode;
+        var aniMax;
+        var aniSlideCounter;
         // function to retrieve query parameters (in this case only id)
         function getUrlParams() {
             var queryParams = document.location.search.substr(1);
@@ -105,31 +108,37 @@ define(["require", "exports", "esri/WebScene", "esri/views/SceneView", "esri/req
         }
         // when the webscene has slides, they are added in a list at the bottom
         function createPresentation(slides) {
-            var slideContainer = document.getElementById("slides");
-            if (slides.length) {
-                // create list using plain old vanilla JS
-                var slideList_1 = document.createElement("ul");
-                slideContainer.appendChild(slideList_1);
-                slides.forEach(function (slide) {
-                    var slideElement = document.createElement("li");
-                    slideElement.id = slide.id;
-                    slideElement.classList.add("slide");
-                    var title = document.createElement("div");
-                    title.innerHTML = slide.title.text;
-                    slideElement.appendChild(title);
-                    slideElement.addEventListener("click", function () {
-                        // the slide is only used to zoom to a viewpoint (more like a bookmark)
-                        // because we don't want to modify the view in any other way
-                        // this also means that layers won't change their visibility with the slide, so make all layers visible from the beginning
-                        view.goTo(slide.viewpoint);
-                    }.bind(slide));
-                    slideList_1.appendChild(slideElement);
-                });
+            console.log("createPresentation", slides.items);
+            // TODO: choose from several configured paths and animation styles here (DepthOfField, revolve)
+            playAnimation(slides.items);
+        }
+        function playAnimation(slides, speed, offset) {
+            if (speed === void 0) { speed = 1; }
+            if (offset === void 0) { offset = 1; }
+            console.log("Playing flight", slides, view);
+            view.on("click", function (e) {
+                console.log("click", e);
+                aniMax = slides.length;
+                aniSlideCounter = 0;
+                aniNextLocation(slides, speed, offset);
+            });
+        }
+        function aniNextLocation(slides, speed, offset) {
+            if (speed === void 0) { speed = 1; }
+            if (offset === void 0) { offset = 1; }
+            console.log("Approaching location #" + (aniSlideCounter + 1), slides[aniSlideCounter], slides[aniSlideCounter].viewpoint);
+            if (aniSlideCounter <= slides.length) {
+                view.goTo(slides[aniSlideCounter].viewpoint, {
+                    animate: true,
+                    duration: 10000,
+                    maxDuration: 20000,
+                    easing: "in-out-coast-quadrati"
+                }).then(function () { return aniNextLocation(slides); });
+                aniSlideCounter++;
             }
         }
         function setScene(id) {
             console.log("Setting scene for ", id);
-            document.getElementById("slides").innerHTML = "";
             if (!intro.classList.contains("hide")) {
                 intro.classList.add("hide");
             }
@@ -145,7 +154,7 @@ define(["require", "exports", "esri/WebScene", "esri/views/SceneView", "esri/req
                 basemap: null
             });
             // create a view with a transparent background
-            var view = new SceneView_1.default({
+            view = new SceneView_1.default({
                 container: "viewDiv",
                 map: webscene,
                 alphaCompositingEnabled: true,
@@ -191,11 +200,11 @@ define(["require", "exports", "esri/WebScene", "esri/views/SceneView", "esri/req
                 // generate the presentation
                 webscene.presentation = origWebscene.presentation.clone();
                 createPresentation(webscene.presentation.slides);
-            })
-                .catch(function () {
-                loading.classList.add("hide");
-                error.classList.remove("hide");
             });
+            // .catch(function () {
+            //     loading.classList.add("hide");
+            //     error.classList.remove("hide");
+            // });
             window.view = view;
         }
     }
