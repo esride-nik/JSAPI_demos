@@ -3,9 +3,11 @@
   "version": "1.0.0",
   "description": "Simple demos for ArcGIS API for JavaScript",
   "scripts": {
-    "lint": "jshint ./ || true"
+    "lint": "jshint ./ || true",
+    "start": "browser-sync -s -w --startPath ./sketch-the-city"
   },
   "devDependencies": {
+    "browser-sync": "^2.26.7",
     "jshint": "^2.10.2"
   },
   "repository": {
@@ -22,5 +24,8 @@
   "bugs": {
     "url": "https://github.com/RalucaNicola/JSAPI_demos/issues"
   },
-  "homepage": "https://github.com/RalucaNicola/JSAPI_demos#readme"
+  "homepage": "https://github.com/RalucaNicola/JSAPI_demos#readme",
+  "dependencies": {
+    "typescript": "^3.7.4"
+  }
 }
