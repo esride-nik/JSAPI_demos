@@ -1,5 +1,11 @@
 # Sketch the city
 
+## Scene URLs
+* Berlin: http://esri-de.maps.arcgis.com/home/item.html?id=fa3ac1d65f174050ad31009feaaa9974
+* Köln: http://esri-de.maps.arcgis.com/home/item.html?id=bd05aef63f2f4fb39a1c5646aed1e65f
+
+
+
 Displays different cities as a hand drawn 3D sketch. There are 2 styles available: chalk on blackboard and pencil on canvas. Here are the 2 styles applied on a webscene of San Francisco:
 
 ![screenshot](./images/screenshot.png)

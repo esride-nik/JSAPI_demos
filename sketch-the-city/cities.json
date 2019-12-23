@@ -25,6 +25,12 @@
       "attribution": "<a href='http://www.stadtentwicklung.berlin.de/geoinformation/download/nutzIII.pdf' target='_blank'>Data license</a>"
       },
     {
+      "title": "Köln",
+      "short": "CG",
+      "id": "bd05aef63f2f4fb39a1c5646aed1e65f",
+      "attribution": "Datenbestand 2010: Stadt Köln; Modell des Kölner Doms: 3D Warehouse"
+      },
+    {
       "title": "Washington D.C.",
       "short": "WA",
       "id": "3c647dba420a4f3da9091ae83772e78e",
