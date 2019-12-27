@@ -4,10 +4,6 @@ import esriRequest from "esri/request";
 
 function App() {
 
-    const speedFactor: number = 0.02;
-    const offset: number = 3000;
-
-    let mode = "light";
     let webscene: WebScene;
     let view: SceneView
 
@@ -15,12 +11,15 @@ function App() {
     const loading = document.getElementById("loading");
     const error = document.getElementById("error");
 
+    // settings
+    let speedFactor: number = 0.02;
+    let offset: number = 3000;
+    let mode = "light";
+    let startAt = 0;
     let id: string;
     let city: string;
-    let pathNo: string;
-    let mode: string;
+    let easing = "in-out-coast-quadratic";
     
-    let aniMax: number;
     let aniSlideCounter: number;
 
     // function to retrieve query parameters (in this case only id)
@@ -37,8 +36,11 @@ function App() {
 
         id = result.id;
         city = result.city;
-        pathNo = result.pathNo;
-        mode = result.mode;
+        if (result.mode) mode = result.mode;
+        if (result.speedFactor) speedFactor = result.speedFactor;
+        if (result.offset)  offset = result.offset;
+        if (result.startAt)  startAt = result.startAt;
+        if (result.easing)  easing = result.easing;
     }
 
     getUrlParams();
@@ -125,24 +127,23 @@ function App() {
     function createPresentation(slides: any) {
         console.log("createPresentation", slides.items);
 
-        // TODO: choose from several configured paths and animation styles here (DepthOfField, revolve)
+        // TODO: choose from animation styles here (DepthOfField, revolve)
         playAnimation(slides.items);
     }
 
     function playAnimation(slides: any[]) {
-        console.log("Playing flight", slides, view);
+        if (startAt > slides.length) startAt = 0;
+        aniSlideCounter = startAt;
+
+        console.log("Playing flight on click", slides, view, " | speedFactor:", speedFactor, " | offset (ms):", offset, " | starting at slide ", startAt);
         
         view.on("click", (e: any) => {
-            console.log("click", e);
-            
-            aniMax = slides.length;
-            aniSlideCounter = 0;
             aniNextLocation(slides);
         });
     }
 
     function aniNextLocation(slides: any[]) {
-        console.log("Approaching location #"+(aniSlideCounter+1), slides[aniSlideCounter], slides[aniSlideCounter].viewpoint);
+        console.log("Approaching location #"+aniSlideCounter, slides[aniSlideCounter], slides[aniSlideCounter].viewpoint);
         new Promise((resolve: any) => {            
             setTimeout(resolve, offset);
         }).then(() => {
@@ -152,7 +153,7 @@ function App() {
                     animate: true,
                     speedFactor: speedFactor,
                     maxDuration: 1000000,
-                    easing: "in-out-coast-quadrati"
+                    easing: easing
                 }).then(() => {
                     aniNextLocation(slides)
                 });
