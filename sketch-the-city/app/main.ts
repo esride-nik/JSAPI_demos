@@ -19,7 +19,10 @@ function App() {
     let id: string;
     let city: string;
     let easing = "in-out-coast-quadratic";
-    
+    let noSketch = false;
+    let glowy = false;
+    let noUpdates = false;
+
     let aniSlideCounter: number;
 
     // function to retrieve query parameters (in this case only id)
@@ -38,9 +41,12 @@ function App() {
         city = result.city;
         if (result.mode) mode = result.mode;
         if (result.speedFactor) speedFactor = result.speedFactor;
-        if (result.offset)  offset = result.offset;
-        if (result.startAt)  startAt = result.startAt;
-        if (result.easing)  easing = result.easing;
+        if (result.offset) offset = result.offset;
+        if (result.startAt) startAt = result.startAt;
+        if (result.easing) easing = result.easing;
+        if (result.noSketch) noSketch = result.noSketch;
+        if (result.glowy) glowy = result.glowy;
+        if (result.noUpdates) noUpdates = result.noUpdates;
     }
 
     getUrlParams();
@@ -82,44 +88,42 @@ function App() {
     } else {
         document.getElementById("customCSS").href = "./styles/light.css";
     }
-    if (webscene) {
-        webscene.layers.forEach(function (layer) {
-            setSketchRenderer(layer);
-        });
-    }
 
 
 
     function setSketchRenderer(layer) {
 
-        const outlineColor = mode === "dark" ? [255, 255, 255, 0.8] : [0, 0, 0, 0.8];
-        const fillColor = mode === "dark" ? [10, 10, 10, 0.1] : [255, 255, 255, 0.1];
-        const size = mode === "dark" ? 2 : 1;
+        if (noSketch == false) {
 
-        const sketchEdges = {
-            type: "sketch",
-            color: outlineColor,
-            size: size,
-            extensionLength: 2
-        };
+            const outlineColor = mode === "dark" ? [255, 255, 255, 0.8] : [0, 0, 0, 0.8];
+            const fillColor = mode === "dark" ? [10, 10, 10, 0.1] : [255, 255, 255, 0.1];
+            const size = mode === "dark" ? 2 : 1;
 
-        // this renderers all the layers with semi-transparent white faces
-        // and displays the geometry with sketch edges
-        const renderer = {
-            type: "simple", // autocasts as new SimpleRenderer()
-            symbol: {
-                type: "mesh-3d",
-                symbolLayers: [{
-                    type: "fill",
-                    material: {
-                        color: fillColor,
-                        colorMixMode: "replace"
-                    },
-                    edges: sketchEdges
-                }]
-            }
-        };
-        layer.renderer = renderer;
+            const sketchEdges = {
+                type: "sketch",
+                color: outlineColor,
+                size: size,
+                extensionLength: 2
+            };
+
+            // this renderers all the layers with semi-transparent white faces
+            // and displays the geometry with sketch edges
+            const renderer = {
+                type: "simple", // autocasts as new SimpleRenderer()
+                symbol: {
+                    type: "mesh-3d",
+                    symbolLayers: [{
+                        type: "fill",
+                        material: {
+                            color: fillColor,
+                            colorMixMode: "replace"
+                        },
+                        edges: sketchEdges
+                    }]
+                }
+            };
+            layer.renderer = renderer;
+        }
 
     }
 
@@ -136,19 +140,24 @@ function App() {
         aniSlideCounter = startAt;
 
         console.log("Playing flight on click", slides, view, " | speedFactor:", speedFactor, " | offset (ms):", offset, " | starting at slide ", startAt);
-        
+
         view.on("click", (e: any) => {
+            console.log("click starts animation");
+
+            if (noUpdates) {
+                suspendUpdates(true);
+            }
             aniNextLocation(slides);
         });
     }
 
     function aniNextLocation(slides: any[]) {
-        console.log("Approaching location #"+aniSlideCounter, slides[aniSlideCounter], slides[aniSlideCounter].viewpoint);
-        new Promise((resolve: any) => {            
+        console.log("Approaching location #" + aniSlideCounter, slides[aniSlideCounter], slides[aniSlideCounter].viewpoint);
+        new Promise((resolve: any) => {
             setTimeout(resolve, offset);
         }).then(() => {
             console.log("Offset over", offset);
-            if (aniSlideCounter<=slides.length) {
+            if (aniSlideCounter <= slides.length) {
                 view.goTo(slides[aniSlideCounter].viewpoint, {
                     animate: true,
                     speedFactor: speedFactor,
@@ -163,7 +172,17 @@ function App() {
     }
 
     function setScene(id) {
-        console.log("Setting scene for ", id);
+        if (noSketch == false) {
+            setSketchScene(id);
+        }
+        else {
+            setOriginalScene(id);
+        }
+    }
+
+    function setSketchScene(id) {
+        console.log("Setting sketch scene for ", id);
+
 
         if (!intro.classList.contains("hide")) {
             intro.classList.add("hide");
@@ -236,13 +255,96 @@ function App() {
             webscene.presentation = origWebscene.presentation.clone();
             createPresentation(webscene.presentation.slides);
         });
-            // .catch(function () {
-            //     loading.classList.add("hide");
-            //     error.classList.remove("hide");
-            // });
 
         window.view = view;
     }
+
+    function setOriginalScene(id) {
+        console.log("Setting original scene for ", id);
+
+        if (!intro.classList.contains("hide")) {
+            intro.classList.add("hide");
+        }
+        if (!error.classList.contains("hide")) {
+            error.classList.add("hide");
+        }
+        loading.classList.remove("hide");
+
+        // create an empty webscene
+        webscene = new WebScene({
+            portalItem: {
+                id: id
+            }
+        });
+
+        let environmentParams: any = {
+            starsEnabled: true,
+            atmosphereEnabled: true,
+            atmosphere: {
+                quality: "high"
+            }
+        };
+
+        if (glowy) {
+            environmentParams = {
+                starsEnabled: false,
+                atmosphereEnabled: false
+            };
+
+            let viewDiv = document.getElementById("viewDiv");
+            viewDiv.setAttribute("style", "filter: drop-shadow(0 0 10px rgba(255, 243, 131, 0.5))");
+           
+            
+        }
+
+        // create a view with a transparent background
+        view = new SceneView({
+            container: "viewDiv",
+            map: webscene,
+            environment: environmentParams,
+            ui: {
+                components: ["attribution"]
+            }
+        });
+
+        // once all resources are loaded...
+        webscene.loadAll().then(function () {
+            // go to initial viewpoint in the scene
+            view.goTo(webscene.initialViewProperties.viewpoint)
+                .then(function () {
+                    loading.classList.add("hide");
+                })
+                .catch(function (err) {
+                    console.log(err);
+                });
+
+            // generate the presentation
+            createPresentation(webscene.presentation.slides);
+        });
+
+        window.view = view;
+    }
+
+    function suspendUpdates(suspended) {
+        // Suspend any terrain updates
+        view.basemapTerrain.suspended = suspended;
+
+        // Suspend any feature layer updates (when tiled)
+        view.featureTiles.suspended = suspended;
+
+        view.allLayerViews.forEach((lv) => {
+            if ("_controller" in lv && "_updatesDisabled" in lv._controller) {
+                if (suspended) {
+                    lv._controller._updatesDisabled = true;
+                    lv._controller.cancelNodeLoading();
+                } else {
+                    lv._controller._updatesDisabled = false;
+                    lv._controller._startNodeLoading();
+                }
+            }
+        });
+    }
+
 };
 
 App();

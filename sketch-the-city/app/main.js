@@ -21,6 +21,9 @@ define(["require", "exports", "esri/WebScene", "esri/views/SceneView", "esri/req
         var id;
         var city;
         var easing = "in-out-coast-quadratic";
+        var noSketch = false;
+        var glowy = false;
+        var noUpdates = false;
         var aniSlideCounter;
         // function to retrieve query parameters (in this case only id)
         function getUrlParams() {
@@ -44,6 +47,12 @@ define(["require", "exports", "esri/WebScene", "esri/views/SceneView", "esri/req
                 startAt = result.startAt;
             if (result.easing)
                 easing = result.easing;
+            if (result.noSketch)
+                noSketch = result.noSketch;
+            if (result.glowy)
+                glowy = result.glowy;
+            if (result.noUpdates)
+                noUpdates = result.noUpdates;
         }
         getUrlParams();
         // if user loaded scene by setting an id in the url, load that scene
@@ -83,38 +92,35 @@ define(["require", "exports", "esri/WebScene", "esri/views/SceneView", "esri/req
         else {
             document.getElementById("customCSS").href = "./styles/light.css";
         }
-        if (webscene) {
-            webscene.layers.forEach(function (layer) {
-                setSketchRenderer(layer);
-            });
-        }
         function setSketchRenderer(layer) {
-            var outlineColor = mode === "dark" ? [255, 255, 255, 0.8] : [0, 0, 0, 0.8];
-            var fillColor = mode === "dark" ? [10, 10, 10, 0.1] : [255, 255, 255, 0.1];
-            var size = mode === "dark" ? 2 : 1;
-            var sketchEdges = {
-                type: "sketch",
-                color: outlineColor,
-                size: size,
-                extensionLength: 2
-            };
-            // this renderers all the layers with semi-transparent white faces
-            // and displays the geometry with sketch edges
-            var renderer = {
-                type: "simple",
-                symbol: {
-                    type: "mesh-3d",
-                    symbolLayers: [{
-                            type: "fill",
-                            material: {
-                                color: fillColor,
-                                colorMixMode: "replace"
-                            },
-                            edges: sketchEdges
-                        }]
-                }
-            };
-            layer.renderer = renderer;
+            if (noSketch == false) {
+                var outlineColor = mode === "dark" ? [255, 255, 255, 0.8] : [0, 0, 0, 0.8];
+                var fillColor = mode === "dark" ? [10, 10, 10, 0.1] : [255, 255, 255, 0.1];
+                var size = mode === "dark" ? 2 : 1;
+                var sketchEdges = {
+                    type: "sketch",
+                    color: outlineColor,
+                    size: size,
+                    extensionLength: 2
+                };
+                // this renderers all the layers with semi-transparent white faces
+                // and displays the geometry with sketch edges
+                var renderer = {
+                    type: "simple",
+                    symbol: {
+                        type: "mesh-3d",
+                        symbolLayers: [{
+                                type: "fill",
+                                material: {
+                                    color: fillColor,
+                                    colorMixMode: "replace"
+                                },
+                                edges: sketchEdges
+                            }]
+                    }
+                };
+                layer.renderer = renderer;
+            }
         }
         // when the webscene has slides, they are added in a list at the bottom
         function createPresentation(slides) {
@@ -128,6 +134,10 @@ define(["require", "exports", "esri/WebScene", "esri/views/SceneView", "esri/req
             aniSlideCounter = startAt;
             console.log("Playing flight on click", slides, view, " | speedFactor:", speedFactor, " | offset (ms):", offset, " | starting at slide ", startAt);
             view.on("click", function (e) {
+                console.log("click starts animation");
+                if (noUpdates) {
+                    suspendUpdates(true);
+                }
                 aniNextLocation(slides);
             });
         }
@@ -151,7 +161,15 @@ define(["require", "exports", "esri/WebScene", "esri/views/SceneView", "esri/req
             });
         }
         function setScene(id) {
-            console.log("Setting scene for ", id);
+            if (noSketch == false) {
+                setSketchScene(id);
+            }
+            else {
+                setOriginalScene(id);
+            }
+        }
+        function setSketchScene(id) {
+            console.log("Setting sketch scene for ", id);
             if (!intro.classList.contains("hide")) {
                 intro.classList.add("hide");
             }
@@ -214,11 +232,79 @@ define(["require", "exports", "esri/WebScene", "esri/views/SceneView", "esri/req
                 webscene.presentation = origWebscene.presentation.clone();
                 createPresentation(webscene.presentation.slides);
             });
-            // .catch(function () {
-            //     loading.classList.add("hide");
-            //     error.classList.remove("hide");
-            // });
             window.view = view;
+        }
+        function setOriginalScene(id) {
+            console.log("Setting original scene for ", id);
+            if (!intro.classList.contains("hide")) {
+                intro.classList.add("hide");
+            }
+            if (!error.classList.contains("hide")) {
+                error.classList.add("hide");
+            }
+            loading.classList.remove("hide");
+            // create an empty webscene
+            webscene = new WebScene_1.default({
+                portalItem: {
+                    id: id
+                }
+            });
+            var environmentParams = {
+                starsEnabled: true,
+                atmosphereEnabled: true,
+                atmosphere: {
+                    quality: "high"
+                }
+            };
+            if (glowy) {
+                environmentParams = {
+                    starsEnabled: false,
+                    atmosphereEnabled: false
+                };
+                var viewDiv = document.getElementById("viewDiv");
+                viewDiv.setAttribute("style", "filter: drop-shadow(0 0 10px rgba(255, 243, 131, 0.5))");
+            }
+            // create a view with a transparent background
+            view = new SceneView_1.default({
+                container: "viewDiv",
+                map: webscene,
+                environment: environmentParams,
+                ui: {
+                    components: ["attribution"]
+                }
+            });
+            // once all resources are loaded...
+            webscene.loadAll().then(function () {
+                // go to initial viewpoint in the scene
+                view.goTo(webscene.initialViewProperties.viewpoint)
+                    .then(function () {
+                    loading.classList.add("hide");
+                })
+                    .catch(function (err) {
+                    console.log(err);
+                });
+                // generate the presentation
+                createPresentation(webscene.presentation.slides);
+            });
+            window.view = view;
+        }
+        function suspendUpdates(suspended) {
+            // Suspend any terrain updates
+            view.basemapTerrain.suspended = suspended;
+            // Suspend any feature layer updates (when tiled)
+            view.featureTiles.suspended = suspended;
+            view.allLayerViews.forEach(function (lv) {
+                if ("_controller" in lv && "_updatesDisabled" in lv._controller) {
+                    if (suspended) {
+                        lv._controller._updatesDisabled = true;
+                        lv._controller.cancelNodeLoading();
+                    }
+                    else {
+                        lv._controller._updatesDisabled = false;
+                        lv._controller._startNodeLoading();
+                    }
+                }
+            });
         }
     }
     ;

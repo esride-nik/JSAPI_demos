@@ -23,24 +23,30 @@
       "short": "BE",
       "id": "fa3ac1d65f174050ad31009feaaa9974",
       "attribution": "<a href='http://www.stadtentwicklung.berlin.de/geoinformation/download/nutzIII.pdf' target='_blank'>Data license</a>"
-      },
+    },
     {
       "title": "Köln",
       "short": "CG",
       "id": "bd05aef63f2f4fb39a1c5646aed1e65f",
       "attribution": "Datenbestand 2010: Stadt Köln; Modell des Kölner Doms: 3D Warehouse"
-      },
+    },
     {
       "title": "Köln von Osten",
       "short": "CGO",
       "id": "d350140e74d14f17aec00db6f2094557",
       "attribution": "Datenbestand 2010: Stadt Köln; Modell des Kölner Doms: 3D Warehouse"
-      },
+    },
     {
       "title": "Washington D.C.",
       "short": "WA",
       "id": "3c647dba420a4f3da9091ae83772e78e",
       "attribution": "Open data building 3D model provided by <a href='http://opendata.dc.gov/datasets?q=buildings%203Df' target='_blank'>DCGISopendata</a>"
+    },
+    {
+      "title": "Earthquakes",
+      "short": "EQ",
+      "id": "825b154f5a4647d9909c4bb72eec6271",
+      "attribution": "Raluca's Earthquakes"
     }
   ]
 }
