@@ -23,6 +23,7 @@ define(["require", "exports", "esri/WebScene", "esri/views/SceneView", "esri/req
         var easing = "in-out-coast-quadratic";
         var noSketch = false;
         var glowy = false;
+        var atmosphere = false;
         var noUpdates = false;
         var aniSlideCounter;
         // function to retrieve query parameters (in this case only id)
@@ -51,6 +52,8 @@ define(["require", "exports", "esri/WebScene", "esri/views/SceneView", "esri/req
                 noSketch = result.noSketch;
             if (result.glowy)
                 glowy = result.glowy;
+            if (result.atmosphere)
+                atmosphere = result.atmosphere;
             if (result.noUpdates)
                 noUpdates = result.noUpdates;
         }
@@ -125,7 +128,7 @@ define(["require", "exports", "esri/WebScene", "esri/views/SceneView", "esri/req
         // when the webscene has slides, they are added in a list at the bottom
         function createPresentation(slides) {
             console.log("createPresentation", slides.items);
-            // TODO: choose from animation styles here (DepthOfField, revolve)
+            // TODO: choose from animation styles here (need to implement them first... DepthOfField, revolve)
             playAnimation(slides.items);
         }
         function playAnimation(slides) {
@@ -257,20 +260,38 @@ define(["require", "exports", "esri/WebScene", "esri/views/SceneView", "esri/req
                 }
             };
             if (glowy) {
+                document.getElementsByTagName("body")[0].setAttribute("style", "background-image:none;background-color:#000;");
+                var atmosphereEnabled = false;
+                if (atmosphere) {
+                    atmosphereEnabled = true;
+                }
                 environmentParams = {
                     starsEnabled: false,
-                    atmosphereEnabled: false
+                    atmosphereEnabled: atmosphereEnabled
                 };
-                var viewDiv = document.getElementById("viewDiv");
-                viewDiv.setAttribute("style", "filter: drop-shadow(0 0 10px rgba(255, 243, 131, 0.5))");
             }
             // create a view with a transparent background
             view = new SceneView_1.default({
                 container: "viewDiv",
                 map: webscene,
+                qualityProfile: "high",
+                alphaCompositingEnabled: true,
                 environment: environmentParams,
                 ui: {
                     components: ["attribution"]
+                }
+            });
+            view.when(function () {
+                view.environment.background = {
+                    type: "color",
+                    color: [0, 0, 0, 0]
+                };
+                // view.constraints.clipDistance.far = 50000000;
+                if (glowy) {
+                    var viewDiv = document.getElementById("viewDiv");
+                    viewDiv.setAttribute("style", "filter: drop-shadow(0 0 10px rgba(255, 243, 131, 0.5))");
+                    var viewDivCanvas = viewDiv.getElementsByTagName("canvas")[0];
+                    viewDivCanvas.setAttribute("style", "filter: drop-shadow(0 0 5px rgba(255, 243, 131, 0.6))");
                 }
             });
             // once all resources are loaded...

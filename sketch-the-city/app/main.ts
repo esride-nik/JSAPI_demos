@@ -21,6 +21,7 @@ function App() {
     let easing = "in-out-coast-quadratic";
     let noSketch = false;
     let glowy = false;
+    let atmosphere = false;
     let noUpdates = false;
 
     let aniSlideCounter: number;
@@ -46,6 +47,7 @@ function App() {
         if (result.easing) easing = result.easing;
         if (result.noSketch) noSketch = result.noSketch;
         if (result.glowy) glowy = result.glowy;
+        if (result.atmosphere) atmosphere = result.atmosphere;
         if (result.noUpdates) noUpdates = result.noUpdates;
     }
 
@@ -131,7 +133,7 @@ function App() {
     function createPresentation(slides: any) {
         console.log("createPresentation", slides.items);
 
-        // TODO: choose from animation styles here (DepthOfField, revolve)
+        // TODO: choose from animation styles here (need to implement them first... DepthOfField, revolve)
         playAnimation(slides.items);
     }
 
@@ -284,28 +286,47 @@ function App() {
                 quality: "high"
             }
         };
-
         if (glowy) {
+            document.getElementsByTagName("body")[0].setAttribute("style", "background-image:none;background-color:#000;");
+
+            let atmosphereEnabled = false;
+            if (atmosphere) {
+                atmosphereEnabled = true;
+            }
             environmentParams = {
                 starsEnabled: false,
-                atmosphereEnabled: false
+                atmosphereEnabled: atmosphereEnabled
             };
-
-            let viewDiv = document.getElementById("viewDiv");
-            viewDiv.setAttribute("style", "filter: drop-shadow(0 0 10px rgba(255, 243, 131, 0.5))");
-           
-            
         }
 
         // create a view with a transparent background
         view = new SceneView({
             container: "viewDiv",
             map: webscene,
+            qualityProfile: "high",
+            alphaCompositingEnabled: true,
             environment: environmentParams,
             ui: {
                 components: ["attribution"]
             }
         });
+
+        view.when(function() {
+            view.environment.background = {
+              type: "color",
+              color: [0, 0, 0, 0]
+            };
+        
+            // view.constraints.clipDistance.far = 50000000;
+
+            if (glowy) {
+                let viewDiv = document.getElementById("viewDiv");
+                viewDiv.setAttribute("style", "filter: drop-shadow(0 0 10px rgba(255, 243, 131, 0.5))");
+    
+                let viewDivCanvas = viewDiv.getElementsByTagName("canvas")[0];
+                viewDivCanvas.setAttribute("style", "filter: drop-shadow(0 0 5px rgba(255, 243, 131, 0.6))");
+            }
+          });
 
         // once all resources are loaded...
         webscene.loadAll().then(function () {
