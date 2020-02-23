@@ -5,7 +5,7 @@ import esriRequest from "esri/request";
 function App() {
 
     let webscene: WebScene;
-    let view: SceneView
+    let view: SceneView;
 
     const intro = document.getElementById("intro");
     const loading = document.getElementById("loading");

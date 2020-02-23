@@ -46,11 +46,102 @@
       "esri/geometry/geometryEngine"
     ], function (SceneView, WebScene, Map, Graphic, GraphicsLayer, FeatureLayer, Point, webMercatorUtils, SketchViewModel, Mesh, geometryEngine) {
 
+      let showWidgets = false;
+      let showAreaLayer = false;
+      let itemId = "727b8d56811048c4a3c636c762b2a159";
+      let daffodilAreasUrl = "https://services.arcgis.com/OLiydejKCZTGhvWg/arcgis/rest/services/DaffodilAreas_Coast/FeatureServer/0";
+      let maxDist = 2;
+      let maxHeight = 1;
+      let startAt = 0;
+      let speedFactor = 0.2;
+      let offset = 0;
+      let cameraListener = false;
+      let zoomClose = false;
+      let easing = "in-out-coast-quadratic";
+      let view;
+
+      function getUrlParams() {
+        const queryParams = document.location.search.substr(1);
+        let result = {};
+
+        queryParams.split("?").map((params) => {
+          params.split("&").map((param) => {
+            var item = param.split("=");
+            result[item[0]] = decodeURIComponent(item[1]);
+          })
+        });
+
+        if (result.showWidgets) showWidgets = result.showWidgets;
+        if (result.showAreaLayer) showAreaLayer = result.showAreaLayer;
+        if (result.itemId) itemId = result.itemId;
+        if (result.daffodilAreasUrl) daffodilAreasUrl = result.daffodilAreasUrl;
+        if (result.maxDist) maxDist = result.maxDist;
+        if (result.maxHeight) maxHeight = result.maxHeight;
+        if (result.cameraListener) cameraListener = result.cameraListener;
+        if (result.zoomClose) zoomClose = result.zoomClose;
+        if (result.startAt) startAt = result.startAt;
+        if (result.speedFactor) speedFactor = result.speedFactor;
+        if (result.offset) offset = result.offset;
+        if (result.easing) easing = result.easing;
+      }
+
+      getUrlParams();
+
       function getRndPercent(min = 0, max = 100) {
         let rnd = Math.random() * (max - min + 1) + min;
         let pc = rnd / 100.0;
         return pc;
       }
+
+
+      // when the webscene has slides, they are added in a list at the bottom
+      function createPresentation(slides) {
+        // when the webscene has slides, they are added in a list at the bottom
+        console.log("createPresentation", slides.items);
+        playAnimation(slides.items);
+      }
+
+      function playAnimation(slides) {
+        if (startAt > slides.length) startAt = 0;
+        aniSlideCounter = startAt;
+
+        console.log("Playing flight on click", slides, view, " | speedFactor:", speedFactor, " | offset (ms):", offset, " | starting at slide ", startAt);
+
+        view.on("click", (e) => {
+          console.log("click starts animation");
+          aniNextLocation(slides);
+        });
+      }
+
+      function aniNextLocation(slides) {
+        console.log("Approaching location #" + aniSlideCounter, slides[aniSlideCounter], slides[aniSlideCounter].viewpoint);
+        new Promise((resolve) => {
+          setTimeout(resolve, offset);
+        }).then(() => {
+          console.log("Offset over", offset);
+          if (aniSlideCounter <= slides.length) {
+            view.goTo(slides[aniSlideCounter].viewpoint, {
+              animate: true,
+              speedFactor: speedFactor,
+              maxDuration: 1000000,
+              easing: easing
+            }).then(() => {
+              aniNextLocation(slides)
+            });
+            aniSlideCounter++;
+          }
+        });
+      }
+
+
+
+
+
+
+
+
+
+
 
       let coordinates = webMercatorUtils.geographicToWebMercator(
         new Point({ y: 41.391256, x: -70.632368 })
@@ -60,13 +151,32 @@
       const webScene = new WebScene({
         portalItem: {
           // autocasts as new PortalItem()
-          id: "727b8d56811048c4a3c636c762b2a159"
+          id: itemId
         }
       });
 
-      const view = new SceneView({
+      view = new SceneView({
         container: "viewDiv",
         map: webScene
+      });
+
+      if (!showWidgets) view.ui.empty("top-left");
+
+      view.when(() => {
+
+        createPresentation(webScene.presentation.slides);
+
+        if (zoomClose) {
+          let c = view.camera;
+          c.position.z = 0.1;
+          view.goTo(c);
+        }
+
+        if (cameraListener) {
+          view.watch("camera", (c) => {
+            console.log(JSON.stringify(c));
+          })
+        }
       });
 
       const modelLayer = new GraphicsLayer({
@@ -74,20 +184,18 @@
       });
       view.map.add(modelLayer);
 
-      let daffodilPatterns = new FeatureLayer({
-        url: "https://services.arcgis.com/OLiydejKCZTGhvWg/arcgis/rest/services/Daffodil_Patterns/FeatureServer/3",
-        id: "daffodilPatterns"
+      let daffodilAreas = new FeatureLayer({
+        url: daffodilAreasUrl,
+        id: "daffodilAreas"
       })
-      // view.map.add(daffodilPatterns);
+      if (showAreaLayer) view.map.add(daffodilAreas);
 
 
-      const maxDist = 2;
-      const maxHeight = 1;
 
       // Queries for all the features in the service (not the graphics in the view)
-      daffodilPatterns.queryFeatures().then(function (results) {
+      daffodilAreas.queryFeatures().then(function (results) {
         // prints an array of all the features in the service to the console
-        console.log("daffodilPatterns query", results.features);
+        console.log("daffodilAreas query", results.features);
 
         let allGeo = results.features.map((result) => result.geometry);
         let unGeo = geometryEngine.union(allGeo);
@@ -108,7 +216,7 @@
             });
             if (geometryEngine.contains(unGeo, point)) {
               let heading = Math.random() * 360;
-              let height = maxHeight * getRndPercent(50,100);
+              let height = maxHeight * getRndPercent(50, 100);
               let graphic = new Graphic({
                 geometry: point,
                 symbol: {
@@ -139,107 +247,12 @@
         console.log("total pointCounter", pointCounter);
       });
 
-
-
-
-      const tentBtn = document.getElementById("tent");
-      const canoeBtn = document.getElementById("canoe");
-
-      view
-        .when(function () {
-
-          // view.goTo({"position":{"spatialReference":{"latestWkid":3857,"wkid":102100},"x":-7882674.341412749,"y":5061855.148433044,"z":380.1221046987921},"heading":11.811022479572395,"tilt":66.98044169291248}, { duration: 1000 });
-          // // view.goTo(coordinates, { duration: 1000 });
-
-          // view.watch("camera", (c) => {
-          //   console.log(JSON.stringify(c));
-          // })
-
-          // This sample uses the SketchViewModel to add points to a
-          // GraphicsLayer. The points have 3D glTF models as symbols.
-          const sketchVM = new SketchViewModel({
-            layer: modelLayer,
-            view: view
-          });
-
-          tentBtn.addEventListener("click", function () {
-            // reference the relative path to the glTF model
-            // in the resource of an ObjectSymbol3DLayer
-            sketchVM.pointSymbol = {
-              type: "point-3d",
-              symbolLayers: [
-                {
-                  type: "object",
-                  resource: {
-                    href:
-                      "./Daffodil_426ed1.gltf"
-                  },
-                  height: 10
-                }
-              ]
-            };
-            sketchVM.create("point");
-            deactivateButtons();
-            this.classList.add("esri-button--secondary");
-          });
-
-          canoeBtn.addEventListener("click", function () {
-            // reference the relative path to the glTF model
-            // in the resource of an ObjectSymbol3DLayer
-            sketchVM.pointSymbol = {
-              type: "point-3d",
-              symbolLayers: [
-                {
-                  type: "object",
-                  resource: {
-                    href:
-                      "./bs_Daffodil.glb"
-                  },
-                  height: 10
-                }
-              ]
-            };
-            // deactivateButtons();
-            sketchVM.create("point");
-            // this.classList.add("esri-button--secondary");
-          });
-
-          sketchVM.on("create", function (event) {
-            if (event.state === "complete") {
-              sketchVM.update(event.graphic);
-              deactivateButtons();
-            }
-          });
-        })
-        .catch(console.error);
-
-      function deactivateButtons() {
-        const elements = Array.prototype.slice.call(
-          document.getElementsByClassName("esri-button")
-        );
-        elements.forEach(function (element) {
-          element.classList.remove("esri-button--secondary");
-        });
-      }
-
-      view.ui.add("paneDiv", "top-right");
     });
   </script>
 </head>
 
 <body>
   <div id="viewDiv"></div>
-  <div id="paneDiv" class="esri-widget">
-    <p>Select a symbol and place it in the scene:</p>
-    <button id="tent" class="esri-button">Tent</button><br />
-    <button id="canoe" class="esri-button">Canoe</button>
-    <p id="credits">
-      Tent and canoe glTF models from
-      <a href="https://www.kenney.nl/assets/" target="_blank">Kenney game assets</a>
-      under
-      <a href="https://creativecommons.org/publicdomain/zero/1.0/" target="_blank">CC0 1.0 Universal</a>.
-    </p>
-  </div>
 </body>
 
 </html>
