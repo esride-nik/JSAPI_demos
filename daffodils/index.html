@@ -36,11 +36,20 @@
       "esri/views/SceneView",
       "esri/WebScene",
       "esri/Map",
+      "esri/Graphic",
       "esri/layers/GraphicsLayer",
+      "esri/layers/FeatureLayer",
       "esri/geometry/Point",
       "esri/geometry/support/webMercatorUtils",
-      "esri/widgets/Sketch/SketchViewModel"
-    ], function (SceneView, WebScene, Map, GraphicsLayer, Point, webMercatorUtils, SketchViewModel) {
+      "esri/widgets/Sketch/SketchViewModel",
+      "esri/geometry/geometryEngine"
+    ], function (SceneView, WebScene, Map, Graphic, GraphicsLayer, FeatureLayer, Point, webMercatorUtils, SketchViewModel, geometryEngine) {
+
+      function getRndPercent(min = 0, max = 100) {
+        let rnd = Math.random() * (max - min + 1) + min;
+        let pc = rnd / 100.0;
+        return pc;
+      }
 
       let coordinates = webMercatorUtils.geographicToWebMercator(
         new Point({ y: 41.391256, x: -70.632368 })
@@ -50,7 +59,7 @@
       const webScene = new WebScene({
         portalItem: {
           // autocasts as new PortalItem()
-          id: "414a28cfca7a471180e8e952cf14c60f"
+          id: "727b8d56811048c4a3c636c762b2a159"
         }
       });
 
@@ -59,8 +68,71 @@
         map: webScene
       });
 
-      const graphicsLayer = new GraphicsLayer();
-      view.map.add(graphicsLayer);
+      const modelLayer = new GraphicsLayer({
+        id: "modelLayer"
+      });
+      view.map.add(modelLayer);
+
+      let daffodilPatterns = new FeatureLayer({
+        url: "https://services.arcgis.com/OLiydejKCZTGhvWg/arcgis/rest/services/Daffodil_Patterns/FeatureServer/3",
+        id: "daffodilPatterns"
+      })
+      // view.map.add(daffodilPatterns);
+
+
+      const maxDist = 3;
+
+      // Queries for all the features in the service (not the graphics in the view)
+      daffodilPatterns.queryFeatures().then(function (results) {
+        // prints an array of all the features in the service to the console
+        console.log("daffodilPatterns query", results.features);
+
+        let allGeo = results.features.map((result) => result.geometry);
+        let unGeo = geometryEngine.union(allGeo);
+
+        console.log("result geo", allGeo, unGeo);
+
+        let ext = unGeo.extent;
+        let xDist = maxDist * getRndPercent();
+        let yDist = maxDist * getRndPercent();
+        let pointCounter = 0;
+        let rowCounter = 0;
+        for (let x = ext.xmin; x < ext.xmax; x += xDist) {
+          for (let y = ext.ymin; y < ext.ymax; y += yDist) {
+            let point = new Point({
+              y: y,
+              x: x,
+              spatialReference: unGeo.spatialReference
+            });
+            let graphic = new Graphic({
+              geometry: point,
+              symbol: {
+                type: "point-3d",
+                symbolLayers: [
+                  {
+                    type: "object",
+                    resource: {
+                      href:
+                        "./Daffodil_426ed1.gltf"
+                    },
+                    height: 1
+                  }
+                ]
+              }
+            });
+            modelLayer.add(graphic);
+            yDist = maxDist * getRndPercent();
+            pointCounter++;
+          }
+          xDist = maxDist * getRndPercent();
+          rowCounter++;
+          console.log("row ", rowCounter, " pointCounter", pointCounter);
+        }
+        console.log("total pointCounter", pointCounter);
+      });
+
+
+
 
       const tentBtn = document.getElementById("tent");
       const canoeBtn = document.getElementById("canoe");
@@ -68,16 +140,17 @@
       view
         .when(function () {
 
-          view.goTo({"position":{"spatialReference":{"latestWkid":3857,"wkid":102100},"x":-7882674.341412749,"y":5061855.148433044,"z":380.1221046987921},"heading":11.811022479572395,"tilt":66.98044169291248}, { duration: 1000 });
-          // view.goTo(coordinates, { duration: 1000 });
-          view.watch("camera", (c) => {
-            console.log(JSON.stringify(c));
-          })
+          // view.goTo({"position":{"spatialReference":{"latestWkid":3857,"wkid":102100},"x":-7882674.341412749,"y":5061855.148433044,"z":380.1221046987921},"heading":11.811022479572395,"tilt":66.98044169291248}, { duration: 1000 });
+          // // view.goTo(coordinates, { duration: 1000 });
+
+          // view.watch("camera", (c) => {
+          //   console.log(JSON.stringify(c));
+          // })
 
           // This sample uses the SketchViewModel to add points to a
           // GraphicsLayer. The points have 3D glTF models as symbols.
           const sketchVM = new SketchViewModel({
-            layer: graphicsLayer,
+            layer: modelLayer,
             view: view
           });
 
@@ -91,7 +164,7 @@
                   type: "object",
                   resource: {
                     href:
-                      "./Daffodil_426ed1.gltf" //https://developers.arcgis.com/javascript/latest/sample-code/import-gltf/live/tent.glb"
+                      "./Daffodil_426ed1.gltf"
                   },
                   height: 10
                 }
@@ -112,9 +185,9 @@
                   type: "object",
                   resource: {
                     href:
-                      "https://developers.arcgis.com/javascript/latest/sample-code/import-gltf/live/canoe.glb"
+                      "./bs_Daffodil.glb"
                   },
-                  height: 3
+                  height: 10
                 }
               ]
             };
