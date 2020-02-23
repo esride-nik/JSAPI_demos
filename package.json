@@ -4,7 +4,7 @@
   "description": "Simple demos for ArcGIS API for JavaScript",
   "scripts": {
     "lint": "jshint ./ || true",
-    "start": "browser-sync -s -w --startPath ./sketch-the-city"
+    "start": "browser-sync -s -w --startPath ./daffodils"
   },
   "devDependencies": {
     "browser-sync": "^2.26.7",

@@ -31,7 +31,9 @@
             "esri/geometry/support/MeshComponent",
             "esri/geometry/support/meshUtils",
             "esri/widgets/Search",
-            "esri/geometry/support/webMercatorUtils"
+            "esri/geometry/support/webMercatorUtils",
+            "esri/widgets/Sketch/SketchViewModel",
+            "esri/layers/GraphicsLayer"
         ], function (
             Map,
             SceneView,
@@ -43,7 +45,9 @@
             MeshComponent,
             meshUtils,
             Search,
-            webMercatorUtils
+            webMercatorUtils,
+            SketchViewModel,
+            GraphicsLayer
         ) {
             /**************************************************
              * This sample shows how to create a low-poly terrain
@@ -102,13 +106,66 @@
             // Enable shadows so that the terrain mesh and trees cast shadows
             view.environment.lighting.directShadowsEnabled = true;
 
+            const tentBtn = document.getElementById("tent");
             view
                 .when((e) => {
                     map.ground.navigationConstraint = {
                         type: "none"
                     };
-                    view.goTo(coordinates, { animate: false });
-                    console.log("going to", coordinates);
+                    view.goTo({ "position": { "spatialReference": { "latestWkid": 3857, "wkid": 102100 }, "x": -7864198.086898301, "y": 5060191.294430446, "z": 1275.8877099690042 }, "heading": 7.161972439051331, "tilt": 82.35111359019972 }, { animate: false });
+                    // view.goTo(coordinates, { animate: false });
+                    // console.log("going to", coordinates);
+
+                    view.watch("camera", (c) => {
+                        console.log(JSON.stringify(c));
+                    })
+
+
+
+                    const graphicsLayer = new GraphicsLayer({
+                        if: "modelLayer"
+                    });
+                    view.map.add(graphicsLayer);
+
+
+                    const sketchVM = new SketchViewModel({
+                        layer: graphicsLayer,
+                        view: view
+                    });
+                    tentBtn.addEventListener("click", function (event) {
+
+                        // reference the relative path to the glTF model
+                        // in the resource of an ObjectSymbol3DLayer
+                        sketchVM.pointSymbol = {
+                            type: "point-3d",
+                            symbolLayers: [
+                                {
+                                    type: "object",
+                                    resource: {
+                                        href:
+                                            "./tent.glb"
+                                    }
+                                }
+                            ]
+                        };
+
+                        // Search for graphics at the clicked location. View events can be used
+                        // as screen locations as they expose an x,y coordinate that conforms
+                        // to the ScreenPoint definition.
+                        //   view.hitTest(event).then(function(response) {
+                        console.log("click", event);
+
+                        sketchVM.create("point");
+                    });
+
+
+                    sketchVM.on("create", function (event) {
+                        if (event.state === "complete") {
+                            sketchVM.update(event.graphic);
+                        }
+                    });
+
+                    view.ui.add("paneDiv", "top-right");
                 })
                 .then(createTerrain)
                 //.then(createTrees)
@@ -284,6 +341,9 @@
 
 <body>
     <div id="viewDiv"></div>
+    <div id="paneDiv" class="esri-widget">
+        <button id="tent" class="esri-button">Tent</button><br />
+    </div>
 </body>
 
 </html>

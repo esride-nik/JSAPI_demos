@@ -47,6 +47,18 @@
       "short": "EQ",
       "id": "825b154f5a4647d9909c4bb72eec6271",
       "attribution": "Raluca's Earthquakes"
+    },
+    {
+      "title": "Earthquakes Mid-Part",
+      "short": "EQM",
+      "id": "825b154f5a4647d9909c4bb72eec6271",
+      "attribution": "Raluca's Earthquakes Mid-Part"
+    },
+    {
+      "title": "Five Years of Drought",
+      "short": "FYD",
+      "id": "94a2a4eee96f482a9f60658c8bb14d5d",
+      "attribution": "John's Drought Map"
     }
   ]
 }

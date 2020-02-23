@@ -321,7 +321,8 @@ function App() {
 
             if (glowy) {
                 let viewDiv = document.getElementById("viewDiv");
-                viewDiv.setAttribute("style", "filter: drop-shadow(0 0 10px rgba(255, 243, 131, 0.5))");
+                viewDiv.setAttribute("style", "filter: drop-shadow(0 10px 10px rgba(255, 243, 131, 0.5))");
+                // viewDiv.setAttribute("style", "filter: drop-shadow(0 0 10px rgba(255, 243, 131, 0.5))");
     
                 let viewDivCanvas = viewDiv.getElementsByTagName("canvas")[0];
                 viewDivCanvas.setAttribute("style", "filter: drop-shadow(0 0 5px rgba(255, 243, 131, 0.6))");
