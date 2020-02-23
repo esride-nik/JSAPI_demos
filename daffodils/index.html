@@ -42,8 +42,9 @@
       "esri/geometry/Point",
       "esri/geometry/support/webMercatorUtils",
       "esri/widgets/Sketch/SketchViewModel",
+      "esri/geometry/Mesh",
       "esri/geometry/geometryEngine"
-    ], function (SceneView, WebScene, Map, Graphic, GraphicsLayer, FeatureLayer, Point, webMercatorUtils, SketchViewModel, geometryEngine) {
+    ], function (SceneView, WebScene, Map, Graphic, GraphicsLayer, FeatureLayer, Point, webMercatorUtils, SketchViewModel, Mesh, geometryEngine) {
 
       function getRndPercent(min = 0, max = 100) {
         let rnd = Math.random() * (max - min + 1) + min;
@@ -80,7 +81,8 @@
       // view.map.add(daffodilPatterns);
 
 
-      const maxDist = 1;
+      const maxDist = 2;
+      const maxHeight = 1;
 
       // Queries for all the features in the service (not the graphics in the view)
       daffodilPatterns.queryFeatures().then(function (results) {
@@ -105,6 +107,8 @@
               spatialReference: unGeo.spatialReference
             });
             if (geometryEngine.contains(unGeo, point)) {
+              let heading = Math.random() * 360;
+              let height = maxHeight * getRndPercent(50,100);
               let graphic = new Graphic({
                 geometry: point,
                 symbol: {
@@ -114,14 +118,16 @@
                       type: "object",
                       resource: {
                         href:
-                          "./Daffodil_426ed1.gltf"
+                          "./Daffodil_426_te1.glb"
                       },
-                      height: 1
+                      height: height,
+                      heading: heading,
                     }
                   ]
                 }
               });
               modelLayer.add(graphic);
+              console.log("graphic ", graphic, height, heading);
               pointCounter++;
             }
             yDist = maxDist * getRndPercent();
