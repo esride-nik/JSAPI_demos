@@ -80,7 +80,7 @@
       // view.map.add(daffodilPatterns);
 
 
-      const maxDist = 3;
+      const maxDist = 1;
 
       // Queries for all the features in the service (not the graphics in the view)
       daffodilPatterns.queryFeatures().then(function (results) {
@@ -104,25 +104,27 @@
               x: x,
               spatialReference: unGeo.spatialReference
             });
-            let graphic = new Graphic({
-              geometry: point,
-              symbol: {
-                type: "point-3d",
-                symbolLayers: [
-                  {
-                    type: "object",
-                    resource: {
-                      href:
-                        "./Daffodil_426ed1.gltf"
-                    },
-                    height: 1
-                  }
-                ]
-              }
-            });
-            modelLayer.add(graphic);
+            if (geometryEngine.contains(unGeo, point)) {
+              let graphic = new Graphic({
+                geometry: point,
+                symbol: {
+                  type: "point-3d",
+                  symbolLayers: [
+                    {
+                      type: "object",
+                      resource: {
+                        href:
+                          "./Daffodil_426ed1.gltf"
+                      },
+                      height: 1
+                    }
+                  ]
+                }
+              });
+              modelLayer.add(graphic);
+              pointCounter++;
+            }
             yDist = maxDist * getRndPercent();
-            pointCounter++;
           }
           xDist = maxDist * getRndPercent();
           rowCounter++;
