@@ -160,7 +160,10 @@
         map: webScene
       });
 
-      if (!showWidgets) view.ui.empty("top-left");
+      if (!showWidgets) {
+        view.ui.empty("top-left");
+        view.ui.remove("attribution");
+      }
 
       view.when(() => {
 
