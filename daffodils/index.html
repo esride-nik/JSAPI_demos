@@ -53,12 +53,15 @@
       let maxDist = 2;
       let maxHeight = 1;
       let startAt = 0;
+      let modelLayerStartAt = -1;
+      let modelLayerEndAt = -1;
       let speedFactor = 0.2;
       let offset = 0;
       let cameraListener = false;
       let zoomClose = false;
       let easing = "in-out-coast-quadratic";
       let view;
+      let modelLayer;
 
       function getUrlParams() {
         const queryParams = document.location.search.substr(1);
@@ -80,6 +83,8 @@
         if (result.cameraListener) cameraListener = result.cameraListener;
         if (result.zoomClose) zoomClose = result.zoomClose;
         if (result.startAt) startAt = result.startAt;
+        if (result.modelLayerStartAt) modelLayerStartAt = result.modelLayerStartAt;
+        if (result.modelLayerEndAt) modelLayerEndAt = result.modelLayerEndAt;
         if (result.speedFactor) speedFactor = result.speedFactor;
         if (result.offset) offset = result.offset;
         if (result.easing) easing = result.easing;
@@ -104,7 +109,7 @@
       function playAnimation(slides) {
         if (startAt > slides.length) startAt = 0;
         aniSlideCounter = startAt;
-
+        
         console.log("Playing flight on click", slides, view, " | speedFactor:", speedFactor, " | offset (ms):", offset, " | starting at slide ", startAt);
 
         view.on("click", (e) => {
@@ -120,6 +125,14 @@
         }).then(() => {
           console.log("Offset over", offset);
           if (aniSlideCounter <= slides.length) {
+
+            if ((modelLayerStartAt === -1 || modelLayerStartAt <= aniSlideCounter) && !view.map.findLayerById(modelLayer.id)) {
+              view.map.add(modelLayer);
+            }
+            else if ((modelLayerEndAt === aniSlideCounter) && view.map.findLayerById(modelLayer.id)) {
+              view.map.remove(modelLayer);
+            }
+
             view.goTo(slides[aniSlideCounter].viewpoint, {
               animate: true,
               speedFactor: speedFactor,
@@ -147,12 +160,23 @@
         new Point({ y: 41.391256, x: -70.632368 })
       );
 
-      // load web scene from ArcGIS Online
       const webScene = new WebScene({
         portalItem: {
-          // autocasts as new PortalItem()
           id: itemId
         }
+      });
+
+      webScene.load((w) => {
+        console.log("webScene loaded", w);
+      }).then((b) => {
+        console.log("basemap loaded", b);
+        scene.basemap.loadAll()
+          .catch((error) => {
+            console.error("Basemap resource load error", error);
+          })
+          .then((l) => {
+            console.log("All loaded", l);
+          });
       });
 
       view = new SceneView({
@@ -182,10 +206,9 @@
         }
       });
 
-      const modelLayer = new GraphicsLayer({
+      modelLayer = new GraphicsLayer({
         id: "modelLayer"
       });
-      view.map.add(modelLayer);
 
       let daffodilAreas = new FeatureLayer({
         url: daffodilAreasUrl,
